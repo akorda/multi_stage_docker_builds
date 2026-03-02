@@ -1,0 +1,39 @@
+# ============================================================
+# Docker build context filter (applies to ALL Dockerfiles)
+# Place at repo root so Docker actually reads it.
+# ============================================================
+
+# .NET build output — largest contributor to context bloat
+**/bin/
+**/obj/
+
+# IDE / tooling
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+**/*.suo
+
+# Test results
+**/TestResults/
+**/*.trx
+**/coverage/
+
+# Logs
+**/*.log
+**/logs/
+
+# OS
+**/.DS_Store
+**/Thumbs.db
+
+# Git
+**/.git/
+**/.gitignore
+**/.gitattributes
+
+# Temp
+**/*.tmp
+**/*.temp
+**/tmp/
+**/temp/
