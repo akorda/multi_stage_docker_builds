@@ -1,6 +1,7 @@
 name: Build and Test Docker Images
 
 on:
+    workflow_dispatch:
     push:
         branches: [main]
     pull_request:
@@ -12,12 +13,25 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
+            - name: Ensure nuget cache directory exists
+              run: mkdir -p ${{ github.workspace }}/.nuget/packages
+
+            - name: Cache nuget packages
+              id: cache-nuget-packages
+              uses: actions/cache@v5
+              env:
+                  cache-name: nuget-packages
+              with:
+                  path: ${{ github.workspace }}/.nuget/packages
+                  key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/packages.lock.json') }}
+
             - name: Build multi-stage image
               run: |
                   SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
-                  docker build --target tests.linux-x64 -f Dockerfile --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH --output type=tar,dest=tests.linux-x64.tar,rewrite-timestamp=false .
-                  docker build --target files.linux-x64 -f Dockerfile --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH --output type=tar,dest=app.linux-x64.tar,rewrite-timestamp=false .
-                  docker build --target runtime.linux-x64 -f Dockerfile --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH .
+                  NUGET_PACKAGES=${{ github.workspace }}/.nuget/packages
+                  docker build --target tests.linux-x64 -f Dockerfile --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH --build-arg NUGET_PACKAGES=$NUGET_PACKAGES --output type=tar,dest=tests.linux-x64.tar,rewrite-timestamp=false .
+                  docker build --target files.linux-x64 -f Dockerfile --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH --build-arg NUGET_PACKAGES=$NUGET_PACKAGES --output type=tar,dest=app.linux-x64.tar,rewrite-timestamp=false .
+                  docker build --target runtime.linux-x64 -f Dockerfile --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH --build-arg NUGET_PACKAGES=$NUGET_PACKAGES .
 
             - name: Upload `tests`
               uses: actions/upload-artifact@v6
