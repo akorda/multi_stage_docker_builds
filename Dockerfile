@@ -12,21 +12,31 @@ COPY src/Directory.Packages.props ./
 
 COPY src/Sample.WebApi/Sample.WebApi.csproj src/Sample.WebApi/Sample.WebApi.csproj
 COPY src/Sample.WebApi/packages.lock.json src/Sample.WebApi/packages.lock.json
+COPY src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj
+COPY src/Sample.WebApi.Tests/packages.lock.json src/Sample.WebApi.Tests/packages.lock.json
 
 # --- Stage 2: Restore (cached unless .csproj files change) ---
 
 RUN dotnet restore src/Sample.WebApi/Sample.WebApi.csproj --locked-mode
+RUN dotnet restore src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj --locked-mode
 
 # --- Stage 3: Copy source code for required projects only ---
 
-COPY src/Sample.WebApi/ src/Sample.WebApi/
+COPY src/ src/
 
 # --- Stage 4: Build & Publish ---
 
 RUN dotnet build src/Sample.WebApi/Sample.WebApi.csproj --no-restore -f net10.0 -c Release --runtime linux-x64
-RUN dotnet build src/Sample.WebApi/Sample.WebApi.csproj --no-restore -f net10.0 -c Release --runtime win-x64
+RUN dotnet build src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj --no-restore -f net10.0 -c Release --runtime linux-x64
+
+RUN dotnet test src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj \
+    --no-build --no-restore -f net10.0 -c Release --runtime linux-x64 \
+    --logger "html;logfilename=report.html"
+
 RUN dotnet publish src/Sample.WebApi/Sample.WebApi.csproj --no-restore --no-build -f net10.0 -c Release -o /app/linux-x64 --runtime linux-x64
-RUN dotnet publish src/Sample.WebApi/Sample.WebApi.csproj --no-restore --no-build -f net10.0 -c Release -o /app/win-x64 --runtime win-x64
+
+FROM scratch AS tests.linux-x64
+COPY --from=build /build/src/Sample.WebApi.Tests/TestResults/*.* ./
 
 FROM scratch AS files.linux-x64
 COPY --from=build /app/linux-x64/*.* ./
