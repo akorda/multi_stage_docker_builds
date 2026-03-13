@@ -20,14 +20,14 @@ jobs:
                   docker build --target runtime.linux-x64 -f Dockerfile --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH .
 
             - name: Upload `tests`
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v6
               with:
                   name: tests.linux-x64
                   path: |
                       tests.linux-x64.tar
 
             - name: Upload `app`
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v6
               with:
                   name: app.linux-x64
                   path: |
