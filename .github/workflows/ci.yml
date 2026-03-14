@@ -67,16 +67,23 @@ jobs:
           chmod +x ./diffoci
           ./diffoci diff --semantic docker://tag1 docker://tag2
 
+      - name: Untar artifacts
+        run: |
+          mkdir tests.linux-x64
+          tar -xf tests.linux-x64.tar -C tests.linux-x64
+          mkdir app.linux-x64
+          tar -xf app.linux-x64.tar -C app.linux-x64
+
       - name: Upload `tests`
         uses: actions/upload-artifact@v6
         with:
           name: tests.linux-x64
           path: |
-            tests.linux-x64.tar
+            tests.linux-x64/
 
       - name: Upload `app`
         uses: actions/upload-artifact@v6
         with:
           name: app.linux-x64
           path: |
-            app.linux-x64.tar
+            app.linux-x64/
