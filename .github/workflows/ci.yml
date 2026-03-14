@@ -1,48 +1,82 @@
-name: Build and Test Docker Images
+name: Build reproducible dotnet application
 
 on:
-    workflow_dispatch:
-    push:
-        branches: [main]
-    pull_request:
-        branches: [main]
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-    build-app:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v6
+  build-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-            - name: Ensure nuget cache directory exists
-              run: mkdir -p ${{ github.workspace }}/.nuget/packages
+      - name: Ensure nuget cache directory exists
+        run: mkdir -p ${{ github.workspace }}/.nuget/packages
 
-            - name: Cache nuget packages
-              id: cache-nuget-packages
-              uses: actions/cache@v5
-              env:
-                  cache-name: nuget-packages
-              with:
-                  path: ${{ github.workspace }}/.nuget/packages
-                  key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/packages.lock.json') }}
+      - name: Cache nuget packages
+        id: cache-nuget-packages
+        uses: actions/cache@v5
+        env:
+          cache-name: nuget-packages
+        with:
+          path: ${{ github.workspace }}/.nuget/packages
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/packages.lock.json') }}
 
-            - name: Build multi-stage image
-              run: |
-                  SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
-                  NUGET_PACKAGES=${{ github.workspace }}/.nuget/packages
-                  docker build --target tests.linux-x64 -f Dockerfile --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH --build-arg NUGET_PACKAGES=$NUGET_PACKAGES --output type=tar,dest=tests.linux-x64.tar,rewrite-timestamp=false .
-                  docker build --target files.linux-x64 -f Dockerfile --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH --build-arg NUGET_PACKAGES=$NUGET_PACKAGES --output type=tar,dest=app.linux-x64.tar,rewrite-timestamp=false .
-                  docker build --target runtime.linux-x64 -f Dockerfile --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH --build-arg NUGET_PACKAGES=$NUGET_PACKAGES .
+      - name: Build multi-stage image
+        run: |
+          SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
+          NUGET_PACKAGES=${{ github.workspace }}/.nuget/packages
+          docker build \
+            --target tests.linux-x64 \
+            -f Dockerfile \
+            --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
+            --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
+            --output type=tar,dest=tests.linux-x64.tar,rewrite-timestamp=false \
+            .
+          docker build \
+            --target files.linux-x64 \
+            -f Dockerfile \
+            --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
+            --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
+            --output type=tar,dest=app.linux-x64.tar,rewrite-timestamp=false \
+            .
+          docker build \
+            --target runtime.linux-x64 \
+            -f Dockerfile \
+            --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
+            --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
+            -t tag1 \
+            .
+          docker build \
+            --no-cache \
+            --target runtime.linux-x64 \
+            -f Dockerfile \
+            --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
+            --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
+            -t tag2 \
+            .
 
-            - name: Upload `tests`
-              uses: actions/upload-artifact@v6
-              with:
-                  name: tests.linux-x64
-                  path: |
-                      tests.linux-x64.tar
+      - name: Verify reproducible build
+        run: |
+          wget -q -O diffoci https://github.com/reproducible-containers/diffoci/releases/download/v0.1.8/diffoci-v0.1.8.linux-amd64
+          chmod +x ./diffoci
+          ./diffoci diff --semantic docker://tag1 docker://tag2
 
-            - name: Upload `app`
-              uses: actions/upload-artifact@v6
-              with:
-                  name: app.linux-x64
-                  path: |
-                      app.linux-x64.tar
+      - name: Upload `tests`
+        uses: actions/upload-artifact@v6
+        with:
+          name: tests.linux-x64
+          path: |
+            tests.linux-x64.tar
+
+      - name: Upload `app`
+        uses: actions/upload-artifact@v6
+        with:
+          name: app.linux-x64
+          path: |
+            app.linux-x64.tar
