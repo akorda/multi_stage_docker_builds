@@ -39,7 +39,7 @@ jobs:
             --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
             .
 
-      - name: Build & Publish
+      - name: Run tests
         run: |
           SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
           NUGET_PACKAGES=${{ github.workspace }}/.nuget/packages
@@ -51,6 +51,14 @@ jobs:
             --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
             --output type=tar,dest=tests.linux-x64.tar,rewrite-timestamp=false \
             .
+
+          mkdir tests.linux-x64
+          tar -xf tests.linux-x64.tar -C tests.linux-x64
+
+      - name: Publish
+        run: |
+          SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
+          NUGET_PACKAGES=${{ github.workspace }}/.nuget/packages
 
           docker build \
             --target files.linux-x64 \
@@ -68,6 +76,14 @@ jobs:
             -t tag1 \
             .
 
+          mkdir app.linux-x64
+          tar -xf app.linux-x64.tar -C app.linux-x64
+
+      - name: Verify reproducible build
+        run: |
+          SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
+          NUGET_PACKAGES=${{ github.workspace }}/.nuget/packages
+
           docker build \
             --no-cache \
             --target runtime.linux-x64 \
@@ -77,18 +93,9 @@ jobs:
             -t tag2 \
             .
 
-      - name: Verify reproducible build
-        run: |
           wget -q -O diffoci https://github.com/reproducible-containers/diffoci/releases/download/v0.1.8/diffoci-v0.1.8.linux-amd64
           chmod +x ./diffoci
           ./diffoci diff --semantic docker://tag1 docker://tag2
-
-      - name: Untar artifacts
-        run: |
-          mkdir tests.linux-x64
-          tar -xf tests.linux-x64.tar -C tests.linux-x64
-          mkdir app.linux-x64
-          tar -xf app.linux-x64.tar -C app.linux-x64
 
       - name: Upload `tests`
         uses: actions/upload-artifact@v6

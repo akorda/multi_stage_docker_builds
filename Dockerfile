@@ -35,7 +35,7 @@ COPY .editorconfig ./
 RUN dotnet format src/Sample.slnx \
     --verify-no-changes
 
-# Build, test & publish
+# Build
 FROM build_base AS build
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet build src/Sample.WebApi/Sample.WebApi.csproj \
@@ -45,23 +45,25 @@ RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet build src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj \
     --no-restore -f net10.0 -c Release --runtime linux-x64
 
+FROM build AS tests
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet test src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj \
     --no-build -f net10.0 -c Release --runtime linux-x64 \
     --logger "html;logfilename=report.html"
 
+FROM scratch AS tests.linux-x64
+COPY --from=tests /build/src/Sample.WebApi.Tests/TestResults/*.* ./
+
+FROM build AS publish
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet publish src/Sample.WebApi/Sample.WebApi.csproj \
     --no-restore --no-build -f net10.0 -c Release -o /app/linux-x64 --runtime linux-x64
 
-FROM scratch AS tests.linux-x64
-COPY --from=build /build/src/Sample.WebApi.Tests/TestResults/*.* ./
-
 FROM scratch AS files.linux-x64
-COPY --from=build /app/linux-x64/*.* ./
+COPY --from=publish /app/linux-x64/*.* ./
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.5-noble-chiseled-amd64 AS runtime.linux-x64
 EXPOSE 8080
 WORKDIR /app
-COPY --from=build /app/linux-x64/*.* ./
+COPY --from=publish /app/linux-x64/*.* ./
 ENTRYPOINT ["dotnet", "Sample.WebApi.dll"]
