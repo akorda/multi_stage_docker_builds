@@ -27,10 +27,23 @@ jobs:
           path: ${{ github.workspace }}/.nuget/packages
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/packages.lock.json') }}
 
-      - name: Build multi-stage image
+      - name: Run dotnet format
         run: |
           SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
           NUGET_PACKAGES=${{ github.workspace }}/.nuget/packages
+
+          docker build \
+            --target verify_dotnet_format \
+            -f Dockerfile \
+            --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
+            --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
+            .
+
+      - name: Build & Publish
+        run: |
+          SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
+          NUGET_PACKAGES=${{ github.workspace }}/.nuget/packages
+
           docker build \
             --target tests.linux-x64 \
             -f Dockerfile \
@@ -38,6 +51,7 @@ jobs:
             --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
             --output type=tar,dest=tests.linux-x64.tar,rewrite-timestamp=false \
             .
+
           docker build \
             --target files.linux-x64 \
             -f Dockerfile \
@@ -45,6 +59,7 @@ jobs:
             --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
             --output type=tar,dest=app.linux-x64.tar,rewrite-timestamp=false \
             .
+
           docker build \
             --target runtime.linux-x64 \
             -f Dockerfile \
@@ -52,6 +67,7 @@ jobs:
             --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
             -t tag1 \
             .
+
           docker build \
             --no-cache \
             --target runtime.linux-x64 \

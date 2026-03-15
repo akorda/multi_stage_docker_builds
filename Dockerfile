@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0.201 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.201 AS build_base
 
 ARG NUGET_PACKAGES=/root/.nuget/packages
 ARG SOURCE_DATE_EPOCH=0
@@ -13,7 +13,7 @@ WORKDIR /build
 COPY src/Directory.Build.props ./
 COPY src/Directory.Packages.props ./
 
-# --- Stage 1: Copy solution & .csproj/packages.lock.json files only (for restore layer caching) ---
+# Copy solution & .csproj/packages.lock.json files only
 
 COPY src/Sample.slnx src/Sample.slnx
 COPY src/Sample.WebApi/Sample.WebApi.csproj src/Sample.WebApi/Sample.WebApi.csproj
@@ -21,17 +21,22 @@ COPY src/Sample.WebApi/packages.lock.json src/Sample.WebApi/packages.lock.json
 COPY src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj
 COPY src/Sample.WebApi.Tests/packages.lock.json src/Sample.WebApi.Tests/packages.lock.json
 
-# --- Stage 2: Restore (cached unless .csproj files change) ---
-
+# Restore (cached unless .csproj files change)
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet restore src/Sample.slnx --locked-mode
 
-# --- Stage 3: Copy source code for required projects only ---
+# Copy source code for required projects only
 
 COPY src/ src/
 
-# --- Stage 4: Build & Publish ---
+# Verify no-format errors
+FROM build_base AS verify_dotnet_format
+COPY .editorconfig ./
+RUN dotnet format src/Sample.slnx \
+    --verify-no-changes
 
+# Build, test & publish
+FROM build_base AS build
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet build src/Sample.WebApi/Sample.WebApi.csproj \
     --no-restore -f net10.0 -c Release --runtime linux-x64

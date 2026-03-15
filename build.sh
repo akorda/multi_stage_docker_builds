@@ -1,6 +1,12 @@
 export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
 
 docker build \
+    --target verify_dotnet_format \
+    -f Dockerfile \
+    --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
+    .
+
+docker build \
     --target tests.linux-x64 \
     -f Dockerfile \
     --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
@@ -28,6 +34,7 @@ docker build \
     --target runtime.linux-x64 \
     -f Dockerfile \
     --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
+    --build-arg SKIP_DOTNET_FORMAT=true \
     --provenance=false \
     --sbom=false \
     -t tag2 \
