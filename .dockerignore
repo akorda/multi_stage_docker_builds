@@ -37,3 +37,8 @@
 **/*.temp
 **/tmp/
 **/temp/
+
+
+# SonarQube
+**/.sonar/
+**/.scannerwork/

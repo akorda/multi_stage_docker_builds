@@ -2,10 +2,13 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0.201 AS build_base
 
 ARG NUGET_PACKAGES=/root/.nuget/packages
 ARG SOURCE_DATE_EPOCH=0
+ARG SONARSCANNER_VERSION=11.2.0
+ARG RUN_SONARQUBE=false
 
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=true \
     NUGET_PACKAGES=${NUGET_PACKAGES} \
-    SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}
+    SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} \
+    PATH="$PATH:/root/.dotnet/tools"
 
 WORKDIR /build
 
@@ -37,6 +40,22 @@ RUN dotnet format src/Sample.slnx \
 
 # Build
 FROM build_base AS build
+
+# RUN dotnet tool install --global dotnet-sonarscanner --version $SONARSCANNER_VERSION
+RUN if [ $RUN_SONARQUBE = true ]; then \
+    dotnet tool install --global dotnet-sonarscanner --version $SONARSCANNER_VERSION; \
+    fi
+
+RUN --mount=type=secret,id=sonarqube_org,env=SONARQUBE_ORG \
+    --mount=type=secret,id=sonarqube_project_key,env=SONARQUBE_PROJECT_KEY \
+    --mount=type=secret,id=sonarqube_token,env=SONARQUBE_TOKEN \
+    if [ $RUN_SONARQUBE = true ]; then \
+    dotnet sonarscanner begin \
+    /o:$SONARQUBE_ORG \
+    /k:$SONARQUBE_PROJECT_KEY \
+    /d:sonar.token=$SONARQUBE_TOKEN; \
+    fi
+
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet build src/Sample.WebApi/Sample.WebApi.csproj \
     --no-restore -f net10.0 -c Release --runtime linux-x64
@@ -44,6 +63,12 @@ RUN --mount=type=cache,target=$NUGET_PACKAGES \
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet build src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj \
     --no-restore -f net10.0 -c Release --runtime linux-x64
+
+RUN --mount=type=secret,id=sonarqube_token,env=SONARQUBE_TOKEN \
+    if [ $RUN_SONARQUBE = true ]; then \
+    dotnet sonarscanner end \
+    /d:sonar.token=$SONARQUBE_TOKEN; \
+    fi
 
 FROM build AS tests
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
