@@ -11,4 +11,8 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Sample.Lib\Sample.Lib.csproj" />
+  </ItemGroup>
+
 </Project>

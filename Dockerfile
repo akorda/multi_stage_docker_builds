@@ -15,21 +15,20 @@ WORKDIR /build
 # Copy root build files
 COPY src/Directory.Build.props ./
 COPY src/Directory.Packages.props ./
-
 # Copy solution & .csproj/packages.lock.json files only
-
 COPY src/Sample.slnx src/Sample.slnx
 COPY src/Sample.WebApi/Sample.WebApi.csproj src/Sample.WebApi/Sample.WebApi.csproj
 COPY src/Sample.WebApi/packages.lock.json src/Sample.WebApi/packages.lock.json
+COPY src/Sample.Lib/Sample.Lib.csproj src/Sample.Lib/Sample.Lib.csproj
+COPY src/Sample.Lib/packages.lock.json src/Sample.Lib/packages.lock.json
 COPY src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj
 COPY src/Sample.WebApi.Tests/packages.lock.json src/Sample.WebApi.Tests/packages.lock.json
 
-# Restore (cached unless .csproj files change)
+# Restore (cached unless previous files changed)
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet restore src/Sample.slnx --locked-mode
 
-# Copy source code for required projects only
-
+# Copy source code
 COPY src/ src/
 
 # Verify no-format errors
@@ -41,7 +40,6 @@ RUN dotnet format src/Sample.slnx \
 # Build
 FROM build_base AS build
 
-# RUN dotnet tool install --global dotnet-sonarscanner --version $SONARSCANNER_VERSION
 RUN if [ $RUN_SONARQUBE = true ]; then \
     dotnet tool install --global dotnet-sonarscanner --version $SONARSCANNER_VERSION; \
     fi
@@ -70,6 +68,7 @@ RUN --mount=type=secret,id=sonarqube_token,env=SONARQUBE_TOKEN \
     /d:sonar.token=$SONARQUBE_TOKEN; \
     fi
 
+# Run tests
 FROM build AS tests
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet test src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj \
@@ -84,9 +83,11 @@ RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet publish src/Sample.WebApi/Sample.WebApi.csproj \
     --no-restore --no-build -f net10.0 -c Release -o /app/linux-x64 --runtime linux-x64
 
+# Save binaries
 FROM scratch AS files.linux-x64
 COPY --from=publish /app/linux-x64/*.* ./
 
+# Create docker image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.5-noble-chiseled-amd64 AS runtime.linux-x64
 EXPOSE 8080
 WORKDIR /app
