@@ -1,9 +1,12 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0.201 AS build_base
+ARG SDK_IMAGE=10.0.201
+ARG ASPNET_IMAGE=10.0.5-noble-chiseled-amd64
+FROM mcr.microsoft.com/dotnet/sdk:$SDK_IMAGE AS build_base
 
 ARG NUGET_PACKAGES=/root/.nuget/packages
 ARG SOURCE_DATE_EPOCH=0
 ARG SONARSCANNER_VERSION=11.2.0
 ARG RUN_SONARQUBE=false
+ARG CONFIGURATION=Release
 
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=true \
     NUGET_PACKAGES=${NUGET_PACKAGES} \
@@ -56,11 +59,11 @@ RUN --mount=type=secret,id=sonarqube_org,env=SONARQUBE_ORG \
 
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet build src/Sample.WebApi/Sample.WebApi.csproj \
-    --no-restore -f net10.0 -c Release --runtime linux-x64
+    --no-restore -f net10.0 -c $CONFIGURATION --runtime linux-x64
 
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet build src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj \
-    --no-restore -f net10.0 -c Release --runtime linux-x64
+    --no-restore -f net10.0 -c $CONFIGURATION --runtime linux-x64
 
 RUN --mount=type=secret,id=sonarqube_token,env=SONARQUBE_TOKEN \
     if [ $RUN_SONARQUBE = true ]; then \
@@ -72,7 +75,7 @@ RUN --mount=type=secret,id=sonarqube_token,env=SONARQUBE_TOKEN \
 FROM build AS tests
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet test src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj \
-    --no-build -f net10.0 -c Release --runtime linux-x64 \
+    --no-build -f net10.0 -c $CONFIGURATION --runtime linux-x64 \
     --logger "html;logfilename=report.html"
 
 FROM scratch AS tests.linux-x64
@@ -81,14 +84,14 @@ COPY --from=tests /build/src/Sample.WebApi.Tests/TestResults/*.* ./
 FROM build AS publish
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet publish src/Sample.WebApi/Sample.WebApi.csproj \
-    --no-restore --no-build -f net10.0 -c Release -o /app/linux-x64 --runtime linux-x64
+    --no-restore --no-build -f net10.0 -c $CONFIGURATION -o /app/linux-x64 --runtime linux-x64
 
 # Save binaries
 FROM scratch AS files.linux-x64
 COPY --from=publish /app/linux-x64/*.* ./
 
 # Create docker image
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.5-noble-chiseled-amd64 AS runtime.linux-x64
+FROM mcr.microsoft.com/dotnet/aspnet:$ASPNET_IMAGE AS runtime.linux-x64
 EXPOSE 8080
 WORKDIR /app
 COPY --from=publish /app/linux-x64/*.* ./
