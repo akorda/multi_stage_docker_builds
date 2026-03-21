@@ -107,7 +107,7 @@ jobs:
             -f Dockerfile \
             --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
             --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
-            --build-arg SKIP_SONARQUBE=true \
+            --build-arg RUN_SONARQUBE=false \
             -t tag2 \
             .
 
