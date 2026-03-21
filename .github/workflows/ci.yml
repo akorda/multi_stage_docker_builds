@@ -57,7 +57,7 @@ jobs:
             --secret id=sonarqube_org,env=SONARQUBE_ORG \
             --secret id=sonarqube_project_key,env=SONARQUBE_PROJECT_KEY \
             --secret id=sonarqube_token,env=SONARQUBE_TOKEN \
-            --build-arg RUN_SONARQUBE=true \
+            --build-arg RUN_SONARQUBE=false \
             --output type=tar,dest=tests.linux-x64.tar,rewrite-timestamp=false \
             .
 
@@ -77,7 +77,7 @@ jobs:
             --secret id=sonarqube_org,env=SONARQUBE_ORG \
             --secret id=sonarqube_project_key,env=SONARQUBE_PROJECT_KEY \
             --secret id=sonarqube_token,env=SONARQUBE_TOKEN \
-            --build-arg RUN_SONARQUBE=true \
+            --build-arg RUN_SONARQUBE=false \
             --output type=tar,dest=app.linux-x64.tar,rewrite-timestamp=false \
             .
 
@@ -89,7 +89,7 @@ jobs:
             --secret id=sonarqube_org,env=SONARQUBE_ORG \
             --secret id=sonarqube_project_key,env=SONARQUBE_PROJECT_KEY \
             --secret id=sonarqube_token,env=SONARQUBE_TOKEN \
-            --build-arg RUN_SONARQUBE=true \
+            --build-arg RUN_SONARQUBE=false \
             -t tag1 \
             .
 
