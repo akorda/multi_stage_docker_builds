@@ -1,14 +1,19 @@
 ARG DOTNET_SDK_IMAGE=10.0.201
 ARG ASPNET_IMAGE=10.0.5-noble-chiseled-amd64
 ARG NODE_IMAGE=25.8.1-bookworm
+ARG CSPELL_VERSION=9.7.0
 
 FROM node:$NODE_IMAGE AS node_base
 
 FROM node_base AS spell_check
 
+ARG NPM_PACKAGES=/root/.npm
+
 WORKDIR /build
 
-RUN npm install -g cspell@9.7.0
+RUN npm config set cache $NPM_PACKAGES --global
+RUN --mount=type=cache,target=$NPM_PACKAGES \
+    npm install -g cspell@$CSPELL_VERSION
 COPY src/ src/
 RUN cspell /build/src/**/*.cs
 
@@ -55,8 +60,10 @@ RUN dotnet format src/Sample.slnx \
 # Build
 FROM build_base AS build
 
-RUN if [ $RUN_SONARQUBE = true ]; then \
-    dotnet tool install --global dotnet-sonarscanner --version $SONARSCANNER_VERSION; \
+ARG DOTNET_TOOLS=/root/.net/tools
+
+RUN --mount=type=cache,target=$DOTNET_TOOLS if [ $RUN_SONARQUBE = true ]; then \
+    dotnet tool install --global dotnet-sonarscanner --version $SONARSCANNER_VERSION --tool-path $DOTNET_TOOLS; \
     fi
 
 RUN --mount=type=secret,id=sonarqube_org,env=SONARQUBE_ORG \

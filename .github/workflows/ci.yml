@@ -20,15 +20,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run spell-check
+      - name: Ensure cache directories exists
         run: |
-          docker build \
-            --target spell_check \
-            -f Dockerfile \
-            .
-
-      - name: Ensure nuget cache directory exists
-        run: mkdir -p ${{ github.workspace }}/.nuget/packages
+          mkdir -p ${{ github.workspace }}/.nuget/packages
+          mkdir -p ${{ github.workspace }}/.npm
+          mkdir -p ${{ github.workspace }}/.dotnet/tools
 
       - name: Cache nuget packages
         id: cache-nuget-packages
@@ -38,6 +34,34 @@ jobs:
         with:
           path: ${{ github.workspace }}/.nuget/packages
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/packages.lock.json') }}
+
+      - name: Cache npm packages
+        id: cache-npm-packages
+        uses: actions/cache@v5
+        env:
+          cache-name: npm-packages
+        with:
+          path: ${{ github.workspace }}/.npm
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('.npm_global_packages') }}
+
+      - name: Cache dotnet tools package
+        id: cache-dotnet-tools
+        uses: actions/cache@v5
+        env:
+          cache-name: dotnet-tools
+        with:
+          path: ${{ github.workspace }}/.net/tools
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('.net_tools') }}
+
+      - name: Run spell-check
+        run: |
+          NPM_PACKAGES=${{ github.workspace }}/.npm
+
+          docker build \
+            --target spell_check \
+            -f Dockerfile \
+            --build-arg NPM_PACKAGES=$NPM_PACKAGES \
+            .
 
       - name: Run dotnet format
         run: |
@@ -75,6 +99,7 @@ jobs:
         run: |
           SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
           NUGET_PACKAGES=${{ github.workspace }}/.nuget/packages
+          DOTNET_TOOLS=${{ github.workspace }}/.net/tools
 
           docker build \
             --target files.linux-x64 \
@@ -85,6 +110,7 @@ jobs:
             --secret id=sonarqube_project_key,env=SONARQUBE_PROJECT_KEY \
             --secret id=sonarqube_token,env=SONARQUBE_TOKEN \
             --build-arg RUN_SONARQUBE=false \
+            --build-arg DOTNET_TOOLS=$DOTNET_TOOLS \
             --output type=tar,dest=app.linux-x64.tar,rewrite-timestamp=false \
             .
 
