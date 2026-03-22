@@ -20,6 +20,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Run spell-check
+        run: |
+          docker build \
+            --target spell_check \
+            -f Dockerfile \
+            .
+
       - name: Ensure nuget cache directory exists
         run: mkdir -p ${{ github.workspace }}/.nuget/packages
 

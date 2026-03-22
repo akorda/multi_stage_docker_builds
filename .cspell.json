@@ -6,6 +6,7 @@
         "logfilename",
         "slnx",
         "SonarQube",
-        "sonarscanner"
+        "sonarscanner",
+        "XUnit"
     ]
 }

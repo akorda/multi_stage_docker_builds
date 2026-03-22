@@ -1,6 +1,18 @@
-ARG SDK_IMAGE=10.0.201
+ARG DOTNET_SDK_IMAGE=10.0.201
 ARG ASPNET_IMAGE=10.0.5-noble-chiseled-amd64
-FROM mcr.microsoft.com/dotnet/sdk:$SDK_IMAGE AS build_base
+ARG NODE_IMAGE=25.8.1-bookworm
+
+FROM node:$NODE_IMAGE AS node_base
+
+FROM node_base AS spell_check
+
+WORKDIR /build
+
+RUN npm install -g cspell@9.7.0
+COPY src/ src/
+RUN cspell /build/src/**/*.cs
+
+FROM mcr.microsoft.com/dotnet/sdk:$DOTNET_SDK_IMAGE AS build_base
 
 ARG NUGET_PACKAGES=/root/.nuget/packages
 ARG SOURCE_DATE_EPOCH=0

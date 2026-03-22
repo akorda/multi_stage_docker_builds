@@ -23,7 +23,7 @@ var summaries = new[]
 
 new Bar().Foo();
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/weatherForecast", () =>
 {
     var forecast = Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast

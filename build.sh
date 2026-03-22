@@ -20,6 +20,11 @@ export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
 #     .
 
 docker build \
+    --target spell_check \
+    -f Dockerfile \
+    .
+
+docker build \
     --no-cache \
     --target runtime.linux-x64 \
     -f Dockerfile \
