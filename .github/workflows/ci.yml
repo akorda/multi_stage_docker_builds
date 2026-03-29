@@ -11,6 +11,8 @@ env:
   SONARQUBE_ORG: ${{ secrets.SONARQUBE_ORG }}
   SONARQUBE_PROJECT_KEY: ${{ secrets.SONARQUBE_PROJECT_KEY }}
   SONARQUBE_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+  NUGET_USERNAME: ${{ secrets.NUGET_USERNAME }}
+  NUGET_PASSWORD: ${{ secrets.NUGET_PASSWORD }}
 
 jobs:
   build-app:
@@ -73,6 +75,8 @@ jobs:
             -f Dockerfile \
             --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
             --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
+            --secret id=nuget_username,env=NUGET_USERNAME \
+            --secret id=nuget_password,env=NUGET_PASSWORD \
             .
 
       - name: Run tests
@@ -86,6 +90,8 @@ jobs:
             -f Dockerfile \
             --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
             --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
+            --secret id=nuget_username,env=NUGET_USERNAME \
+            --secret id=nuget_password,env=NUGET_PASSWORD \
             --secret id=sonarqube_org,env=SONARQUBE_ORG \
             --secret id=sonarqube_project_key,env=SONARQUBE_PROJECT_KEY \
             --secret id=sonarqube_token,env=SONARQUBE_TOKEN \
@@ -108,6 +114,8 @@ jobs:
             -f Dockerfile \
             --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
             --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
+            --secret id=nuget_username,env=NUGET_USERNAME \
+            --secret id=nuget_password,env=NUGET_PASSWORD \
             --secret id=sonarqube_org,env=SONARQUBE_ORG \
             --secret id=sonarqube_project_key,env=SONARQUBE_PROJECT_KEY \
             --secret id=sonarqube_token,env=SONARQUBE_TOKEN \
@@ -121,6 +129,8 @@ jobs:
             -f Dockerfile \
             --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
             --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
+            --secret id=nuget_username,env=NUGET_USERNAME \
+            --secret id=nuget_password,env=NUGET_PASSWORD \
             --secret id=sonarqube_org,env=SONARQUBE_ORG \
             --secret id=sonarqube_project_key,env=SONARQUBE_PROJECT_KEY \
             --secret id=sonarqube_token,env=SONARQUBE_TOKEN \

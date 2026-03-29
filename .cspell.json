@@ -1,12 +1,14 @@
 {
     "language": "en",
     "words": [
+        "akorda",
         "aspnet",
+        "configfile",
         "DOTNET_CLI_TELEMETRY_OPTOUT",
         "logfilename",
         "slnx",
         "SonarQube",
         "sonarscanner",
-        "XUnit"
+        "XUnit",
     ]
 }

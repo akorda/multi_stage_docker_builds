@@ -47,6 +47,12 @@ COPY src/Sample.WebApi.Tests/Sample.WebApi.Tests.csproj src/Sample.WebApi.Tests/
 COPY src/Sample.WebApi.Tests/packages.lock.json src/Sample.WebApi.Tests/packages.lock.json
 
 # Restore (cached unless previous files changed)
+COPY src/nuget.config src/nuget.config
+RUN --mount=type=cache,target=$NUGET_PACKAGES \
+    --mount=type=secret,id=nuget_username,env=NUGET_USERNAME \
+    --mount=type=secret,id=nuget_password,env=NUGET_PASSWORD \
+    dotnet nuget update source akorda --username $NUGET_USERNAME --password $NUGET_PASSWORD --store-password-in-clear-text --configfile src/nuget.config
+
 RUN --mount=type=cache,target=$NUGET_PACKAGES \
     dotnet restore src/Sample.slnx --locked-mode
 

@@ -23,7 +23,16 @@
         "contentHash": "GGYLfzV/G/ct80OZ45JxnWP7NvMX1BCugn/lX7TH5o0lcVaviavsLMTxmFV2AybXWjbi3h6FF1vgZiTK6PXndw=="
       },
       "sample.lib": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Sample.MyNugetPackage": "[1.0.0, )"
+        }
+      },
+      "Sample.MyNugetPackage": {
+        "type": "CentralTransitive",
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "THEiPRo43cS5UYdIY8iF6Riz+zU6t75B3+lsMkcbCAmh6mIvnkTQogSeEQ1OfSABVGxamgs27Jt+KOc5eP4ALA=="
       }
     },
     "net10.0/linux-x64": {},

@@ -7,6 +7,12 @@
         "requested": "[2.0.2, )",
         "resolved": "2.0.2",
         "contentHash": "VaHoEN6YHp0jXucxm67vfuRy8zo9ufiKSuaZ4ZudRi8xmWcEFMKxfCsg2nvYNvdISFTURDu+IHqADGh53+Bamw=="
+      },
+      "Sample.MyNugetPackage": {
+        "type": "Direct",
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "THEiPRo43cS5UYdIY8iF6Riz+zU6t75B3+lsMkcbCAmh6mIvnkTQogSeEQ1OfSABVGxamgs27Jt+KOc5eP4ALA=="
       }
     }
   }
