@@ -95,7 +95,7 @@ jobs:
             --secret id=sonarqube_org,env=SONARQUBE_ORG \
             --secret id=sonarqube_project_key,env=SONARQUBE_PROJECT_KEY \
             --secret id=sonarqube_token,env=SONARQUBE_TOKEN \
-            --build-arg RUN_SONARQUBE=true \
+            --build-arg RUN_SONARQUBE=false \
             --build-arg DOTNET_TOOLS=$DOTNET_TOOLS \
             --output type=tar,dest=tests.linux-x64.tar,rewrite-timestamp=false \
             .
@@ -119,7 +119,7 @@ jobs:
             --secret id=sonarqube_org,env=SONARQUBE_ORG \
             --secret id=sonarqube_project_key,env=SONARQUBE_PROJECT_KEY \
             --secret id=sonarqube_token,env=SONARQUBE_TOKEN \
-            --build-arg RUN_SONARQUBE=true \
+            --build-arg RUN_SONARQUBE=false \
             --build-arg DOTNET_TOOLS=$DOTNET_TOOLS \
             --output type=tar,dest=app.linux-x64.tar,rewrite-timestamp=false \
             .
@@ -134,7 +134,7 @@ jobs:
             --secret id=sonarqube_org,env=SONARQUBE_ORG \
             --secret id=sonarqube_project_key,env=SONARQUBE_PROJECT_KEY \
             --secret id=sonarqube_token,env=SONARQUBE_TOKEN \
-            --build-arg RUN_SONARQUBE=true \
+            --build-arg RUN_SONARQUBE=false \
             --build-arg DOTNET_TOOLS=$DOTNET_TOOLS \
             -t tag1 \
             .
@@ -142,24 +142,26 @@ jobs:
           mkdir app.linux-x64
           tar -xf app.linux-x64.tar -C app.linux-x64
 
-      # - name: Verify reproducible build
-      #   run: |
-      #     SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
-      #     NUGET_PACKAGES=${{ github.workspace }}/.nuget/packages
+      - name: Verify reproducible build
+        run: |
+          SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
+          NUGET_PACKAGES=${{ github.workspace }}/.nuget/packages
 
-      #     docker build \
-      #       --no-cache \
-      #       --target runtime.linux-x64 \
-      #       -f Dockerfile \
-      #       --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
-      #       --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
-      #       --build-arg RUN_SONARQUBE=false \
-      #       -t tag2 \
-      #       .
+          docker build \
+            --no-cache \
+            --target runtime.linux-x64 \
+            -f Dockerfile \
+            --build-arg SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH \
+            --build-arg NUGET_PACKAGES=$NUGET_PACKAGES \
+            --secret id=nuget_username,env=NUGET_USERNAME \
+            --secret id=nuget_password,env=NUGET_PASSWORD \
+            --build-arg RUN_SONARQUBE=false \
+            -t tag2 \
+            .
 
-      #     wget -q -O diffoci https://github.com/reproducible-containers/diffoci/releases/download/v0.1.8/diffoci-v0.1.8.linux-amd64
-      #     chmod +x ./diffoci
-      #     ./diffoci diff --semantic docker://tag1 docker://tag2
+          wget -q -O diffoci https://github.com/reproducible-containers/diffoci/releases/download/v0.1.8/diffoci-v0.1.8.linux-amd64
+          chmod +x ./diffoci
+          ./diffoci diff --semantic docker://tag1 docker://tag2
 
       - name: Upload `tests`
         uses: actions/upload-artifact@v6
