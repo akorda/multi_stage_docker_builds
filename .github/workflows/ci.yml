@@ -44,7 +44,7 @@ jobs:
           cache-name: npm-packages
         with:
           path: ${{ github.workspace }}/.npm
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('.npm_global_packages') }}
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}
 
       - name: Cache dotnet tools package
         id: cache-dotnet-tools

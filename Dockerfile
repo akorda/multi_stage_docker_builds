@@ -12,10 +12,11 @@ ARG NPM_PACKAGES=/root/.npm
 WORKDIR /build
 
 RUN npm config set cache $NPM_PACKAGES --global
+COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=$NPM_PACKAGES \
-    npm install -g cspell@$CSPELL_VERSION
+    npm ci
 COPY src/ src/
-RUN cspell /build/src/**/*.cs
+RUN npx cspell /build/src/**/*.cs
 
 FROM mcr.microsoft.com/dotnet/sdk:$DOTNET_SDK_IMAGE AS build_base
 
